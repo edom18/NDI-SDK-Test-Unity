@@ -10,7 +10,7 @@ using UnityEngine;
 public class FindNDI : MonoBehaviour
 {
     private IntPtr _findInstancePtr = IntPtr.Zero;
-    
+
     private List<NDIlib.Source> _sourceList = new List<NDIlib.Source>();
 
     private void Awake()
@@ -57,10 +57,7 @@ public class FindNDI : MonoBehaviour
         // Did it succeed?
         System.Diagnostics.Debug.Assert(_findInstancePtr != IntPtr.Zero, "Failed to create NDI find instance.");
 
-        Task.Run(() =>
-        {
-            SearchForWhile(1.0f);
-        });
+        Task.Run(() => { SearchForWhile(1.0f); });
     }
 
     private void SearchForWhile(float minutes)
@@ -74,33 +71,36 @@ public class FindNDI : MonoBehaviour
                 Debug.Log("No change to the sources found.");
                 continue;
             }
-            
+
             // Get the updated list of sources.
             uint numSources = 0;
             IntPtr p_sources = NDIlib.find_get_current_sources(_findInstancePtr, ref numSources);
-            
+
             // Display all the sources.
             Debug.Log($"Network sources ({numSources} found).");
 
-            if (numSources > 0)
+            // Continue if no device is found.
+            if (numSources == 0)
             {
-                int sourceSizeInBytes = Marshal.SizeOf(typeof(NDIlib.source_t));
+                continue;
+            }
 
-                for (int i = 0; i < numSources; i++)
+            int sourceSizeInBytes = Marshal.SizeOf(typeof(NDIlib.source_t));
+
+            for (int i = 0; i < numSources; i++)
+            {
+                IntPtr p = IntPtr.Add(p_sources, (i * sourceSizeInBytes));
+
+                NDIlib.source_t src = (NDIlib.source_t)Marshal.PtrToStructure(p, typeof(NDIlib.source_t));
+
+                // .Net doesn't handle marshaling UTF-8 strings properly.
+                String name = NDIlib.Utf8ToString(src.p_ndi_name);
+
+                Debug.Log($"{i} {name}");
+
+                if (_sourceList.All(item => item.Name != name))
                 {
-                    IntPtr p = IntPtr.Add(p_sources, (i * sourceSizeInBytes));
-
-                    NDIlib.source_t src = (NDIlib.source_t)Marshal.PtrToStructure(p, typeof(NDIlib.source_t));
-                    
-                    // .Net doesn't handle marshaling UTF-8 strings properly.
-                    String name = NDIlib.Utf8ToString(src.p_ndi_name);
-
-                    Debug.Log($"{i} {name}");
-
-                    if (_sourceList.All(item => item.Name != name))
-                    {
-                        _sourceList.Add(new NDIlib.Source(src));
-                    }
+                    _sourceList.Add(new NDIlib.Source(src));
                 }
             }
         }
