@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using TMPro.EditorUtilities;
 using UnityEngine;
+using UnityEngine.Experimental.TerrainAPI;
 
 public static class NDIlib
 {
@@ -46,6 +47,86 @@ public static class NDIlib
         recv_bandwidth_lowest = 0,
         recv_bandwidth_highest = 100,
     }
+    
+    public enum FourCC_type_e
+    {
+        // YCbCr color space
+        FourCC_type_UYVY = 0x59565955,
+
+        // 4:2:0 formats
+        NDIlib_FourCC_video_type_YV12 = 0x32315659,
+        NDIlib_FourCC_video_type_NV12 = 0x3231564E,
+        NDIlib_FourCC_video_type_I420 = 0x30323449,
+
+        // BGRA
+        FourCC_type_BGRA = 0x41524742,
+        FourCC_type_BGRX = 0x58524742,
+
+        // RGBA
+        FourCC_type_RGBA = 0x41424752,
+        FourCC_type_RGBX = 0x58424752,
+
+        // This is a UYVY buffer followed immediately by an alpha channel buffer.
+        // If the stride of the YCbCr component is "stride", then the alpha channel
+        // starts at image_ptr + yres*stride. The alpha channel stride is stride/2.
+        FourCC_type_UYVA = 0x41565955
+    }
+
+    public enum frame_type_e
+    {
+        frame_type_none = 0,
+        frame_type_video = 1,
+        frame_type_audio = 2,
+        frame_type_metadata =3,
+        frame_type_error = 4,
+        
+        frame_type_status_change = 100,
+    }
+
+    public enum frame_format_type_e
+    {
+        frame_format_type_progressive = 1,
+        frame_format_type_interleaved = 0,
+        frame_format_type_field_0 = 2,
+        frame_format_type_field_1 = 3,
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct video_frame_v2_t
+    {
+        public int xres;
+        public int yres;
+        public FourCC_type_e FourCC;
+        public int frame_rate_N;
+        public int frame_rate_D;
+        public float picture_aspect_ratio;
+        public frame_format_type_e frame_format_type;
+        public Int64 timecode;
+        public IntPtr p_data;
+        public int line_stride_in_bytes;
+        public IntPtr p_metadata;
+        public Int64 timestamp;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct audio_frame_v2_t
+    {
+        public int sample_rate;
+        public int no_channels;
+        public int no_samples;
+        public Int64 timecode;
+        public IntPtr p_data;
+        public int channels_stride_in_bytes;
+        public IntPtr p_metadata;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct metadata_frame_t
+    {
+        public int length;
+        public Int64 timecode;
+        public IntPtr p_data;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct find_create_t
@@ -73,6 +154,13 @@ public static class NDIlib
         public bool allow_video_fields;
 
         public IntPtr p_ndi_recv_name;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct tally_t
+    {
+        [MarshalAs(UnmanagedType.U1)] public bool on_program;
+        [MarshalAs(UnmanagedType.U1)] public bool on_preview;
     }
 
     public class Source
@@ -151,6 +239,38 @@ public static class NDIlib
     [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_recv_create_v3", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
     public static extern IntPtr recv_create_v3(ref recv_create_v3_t p_create_settings);
 
+    [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_recv_set_tally", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    public static extern bool recv_set_tally(IntPtr p_instance, ref tally_t p_tally);
+
+    [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_recv_capture_v2", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    public static extern frame_type_e recv_capture_v2(IntPtr p_instance, ref video_frame_v2_t p_video_data, ref audio_frame_v2_t p_audio_data, ref metadata_frame_t p_metadata, UInt32 timeout_in_ms);
+
+    [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_recv_ptz_is_supported", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.U1)]
+    public static extern bool recv_ptz_is_supported(IntPtr p_instance);
+
+    [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_recv_recording_is_supported", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.U1)]
+    public static extern bool recv_recording_is_supported(IntPtr p_instance);
+
+    [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_recv_get_web_control", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr recv_get_web_control(IntPtr p_instance);
+
+    [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_recv_free_string", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void recv_free_string(IntPtr p_instance, IntPtr p_string);
+
+    [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_recv_free_video_v2", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void recv_free_video_v2(IntPtr p_instance, ref video_frame_v2_t p_video_data);
+
+    [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_recv_free_audio_v2", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void recv_free_audio_v2(IntPtr p_intance, ref audio_frame_v2_t p_audio_data);
+
+    [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_recv_free_metadata", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void recv_free_metadata(IntPtr p_instance, ref metadata_frame_t p_metadata);
+
+    [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_recv_destroy", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void recv_destroy(IntPtr p_instance);
+
     public static string Utf8ToString(IntPtr nativeUtf8, uint? length = null)
     {
         if (nativeUtf8 == IntPtr.Zero)
@@ -177,5 +297,20 @@ public static class NDIlib
         Marshal.Copy(nativeUtf8, buffer, 0, buffer.Length);
 
         return Encoding.UTF8.GetString(buffer);
+    }
+
+    public static IntPtr StringToUtf8(String managedString)
+    {
+        int len = Encoding.UTF8.GetByteCount(managedString);
+
+        byte[] buffer = new byte[len + 1];
+
+        Encoding.UTF8.GetBytes(managedString, 0, managedString.Length, buffer, 0);
+
+        IntPtr nativeUtf8 = Marshal.AllocHGlobal(buffer.Length);
+        
+        Marshal.Copy(buffer, 0, nativeUtf8, buffer.Length);
+
+        return nativeUtf8;
     }
 }
