@@ -45,6 +45,8 @@ public class FindNDI : MonoBehaviour
     private bool _isPtz = false;
     private bool _canRecord = false;
 
+    private bool _stopFinder = false;
+
     // private WaveFormat _waveFormat = null;
 
     private List<NDIlib.Source> _sourceList = new List<NDIlib.Source>();
@@ -62,6 +64,12 @@ public class FindNDI : MonoBehaviour
 
             FindNDIDevices();
         }
+    }
+
+    private void OnDestroy()
+    {
+        _stopFinder = true;
+        Disconnect();
     }
 
     private void FindNDIDevices()
@@ -100,7 +108,7 @@ public class FindNDI : MonoBehaviour
     {
         DateTime startTime = DateTime.Now;
 
-        while (DateTime.Now - startTime < TimeSpan.FromMinutes(minutes))
+        while (!_stopFinder && DateTime.Now - startTime < TimeSpan.FromMinutes(minutes))
         {
             if (!NDIlib.find_wait_for_sources(_findInstancePtr, 5000))
             {
