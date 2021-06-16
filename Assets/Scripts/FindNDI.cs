@@ -11,12 +11,7 @@ using UnityEngine;
 
 public class FindNDI : MonoBehaviour
 {
-    // どこで設定する・・・？
-    public String ReceiveName
-    {
-        get => _receiveName;
-        set => _receiveName = value;
-    }
+    [field: SerializeField] private String ReceiveName;
 
     [Description("Does the current source support PTZ functionality?")]
     public bool IsPtz
