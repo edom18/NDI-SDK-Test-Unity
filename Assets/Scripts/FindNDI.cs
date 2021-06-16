@@ -8,10 +8,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class FindNDI : MonoBehaviour
 {
     [field: SerializeField] private String ReceiveName;
+    [SerializeField] private bool _videoEnabled = false;
+    [SerializeField] private bool _audioEnabled = false;
+    [SerializeField] private RawImage _image = null;
 
     [Description("Does the current source support PTZ functionality?")]
     public bool IsPtz
@@ -39,13 +43,14 @@ public class FindNDI : MonoBehaviour
 
     private Thread _receiveThread = null;
     private bool _exitThread = false;
-    private bool _videoEnabled = false;
-    private bool _audioEnabled = false;
 
     private bool _isPtz = false;
     private bool _canRecord = false;
 
     private bool _stopFinder = false;
+    private SynchronizationContext _mainThreadContext = null;
+
+    private Texture2D _texture = null;
 
     // private WaveFormat _waveFormat = null;
 
@@ -61,6 +66,8 @@ public class FindNDI : MonoBehaviour
         else
         {
             Debug.Log("Initialized NDI.");
+            
+            _mainThreadContext = SynchronizationContext.Current;
 
             FindNDIDevices();
         }
@@ -110,7 +117,7 @@ public class FindNDI : MonoBehaviour
 
         while (!_stopFinder && DateTime.Now - startTime < TimeSpan.FromMinutes(minutes))
         {
-            if (!NDIlib.find_wait_for_sources(_findInstancePtr, 5000))
+            if (!NDIlib.find_wait_for_sources(_findInstancePtr, 1000))
             {
                 Debug.Log("No change to the sources found.");
                 continue;
@@ -144,7 +151,10 @@ public class FindNDI : MonoBehaviour
 
                 if (_sourceList.All(item => item.Name != name))
                 {
-                    _sourceList.Add(new NDIlib.Source(src));
+                    NDIlib.Source source = new NDIlib.Source(src);
+                    _sourceList.Add(source);
+
+                    Connect(source);
                 }
             }
         }
@@ -158,7 +168,7 @@ public class FindNDI : MonoBehaviour
         {
             return;
         }
-        
+
         if (String.IsNullOrEmpty(ReceiveName))
         {
             throw new ArgumentException($"{nameof(ReceiveName)} can not be null or empty.");
@@ -177,13 +187,13 @@ public class FindNDI : MonoBehaviour
             allow_video_fields = false,
             p_ndi_recv_name = NDIlib.StringToUtf8(ReceiveName),
         };
-        
+
         // Create a new instance connected to this source.
         _recvInstancePtr = NDIlib.recv_create_v3(ref recvDescription);
 
         Marshal.FreeHGlobal(source_t.p_ndi_name);
         Marshal.FreeHGlobal(recvDescription.p_ndi_recv_name);
-        
+
         // Did it work?
         System.Diagnostics.Debug.Assert(_recvInstancePtr != IntPtr.Zero, "Failed to create NDI receive instance.");
 
@@ -191,36 +201,36 @@ public class FindNDI : MonoBehaviour
         {
             return;
         }
-        
+
         // We are now going to mark this source as being on program output for tally purposes (but not on preview)
         SetTallyIndicators(true, false);
-        
+
         // Start up a thread to receive on
-        _receiveThread = new Thread(ReceiveThreadProc) { IsBackground = true, Name = "NdiExampleReceiveThread" };
+        _receiveThread = new Thread(ReceiveThreadProc) {IsBackground = true, Name = "NdiExampleReceiveThread"};
         _receiveThread.Start();
     }
 
     private void Disconnect()
     {
         SetTallyIndicators(false, false);
-        
+
         // check for a running thread
         if (_receiveThread != null)
         {
             // tell it to exit
             _exitThread = true;
-            
+
             // wait for it to end
             _receiveThread.Join();
         }
-        
+
         // Reset thread defaults
         _receiveThread = null;
         _exitThread = false;
-        
+
         // Destroy the receiver
         NDIlib.recv_destroy(_recvInstancePtr);
-        
+
         // set function status to defaults
         IsPtz = false;
         IsRecordingSupported = false;
@@ -258,7 +268,7 @@ public class FindNDI : MonoBehaviour
                 case NDIlib.frame_type_e.frame_type_none:
                     // No data received
                     break;
-                
+
                 // Frame settings - check for extended functionality.
                 case NDIlib.frame_type_e.frame_type_status_change:
                     // check for PTZ
@@ -276,8 +286,9 @@ public class FindNDI : MonoBehaviour
                         WebControlUrl = NDIlib.Utf8ToString(webUrlPtr);
                         NDIlib.recv_free_string(_recvInstancePtr, webUrlPtr);
                     }
+
                     break;
-                
+
                 case NDIlib.frame_type_e.frame_type_video:
                     // If not enabled, just discard
                     // this can also occasionally happen when changing sources.
@@ -287,28 +298,40 @@ public class FindNDI : MonoBehaviour
                         NDIlib.recv_free_video_v2(_recvInstancePtr, ref videoFrame);
                         break;
                     }
-                    
+
                     // get all our info so that we can free the frame
                     int yres = videoFrame.yres;
                     int xres = videoFrame.xres;
-                    
+
                     // quick and dirty aspect ratio correction for non-square pixels - SD 4:3, 16:9, etc.
                     double dpiX = 96.0 * (videoFrame.picture_aspect_ratio / ((double)xres / (double)yres));
 
                     int stride = (int)videoFrame.line_stride_in_bytes;
                     int bufferSize = yres * stride;
-                    
+
                     // We need to be on the UI thread to write to our bitmap
                     // Not very efficient, but this is just an example.
-                    Task.Run(() =>
-                    {
-                        // NOTE: Implement bitmap controls.
 
-                        NDIlib.recv_free_video_v2(_recvInstancePtr, ref videoFrame);
-                    });
+                    byte[] managedArray = new byte[bufferSize];
+                    Marshal.Copy(videoFrame.p_data, managedArray, 0, bufferSize);
                     
+                    _mainThreadContext.Post(d =>
+                    {
+                        if (_texture == null)
+                        {
+                            _texture = new Texture2D(xres, yres, TextureFormat.BGRA32, false);
+                            _image.texture = _texture;
+                        }
+
+                        // _texture.LoadRawTextureData(videoFrame.p_data, bufferSize);
+                        _texture.LoadRawTextureData(managedArray);
+                        _texture.Apply();
+                    }, null);
+
+                    NDIlib.recv_free_video_v2(_recvInstancePtr, ref videoFrame);
+
                     break;
-                
+
                 // Audio is beyond the scope of this example
                 case NDIlib.frame_type_e.frame_type_audio:
                     // if not audio or disabled, nothing to do.
@@ -318,22 +341,22 @@ public class FindNDI : MonoBehaviour
                         NDIlib.recv_free_audio_v2(_recvInstancePtr, ref audioFrame);
                         break;
                     }
-                    
+
                     // if the audio format changed, we need to reconfigure the audio device.
                     bool formatChanged = false;
-                    
+
                     // make sure our format has been created and matches the incomming audio.
                     // NOTE: Setup WaveAudio that is defined in NAudio.dll.
-                    
+
                     NDIlib.recv_free_audio_v2(_recvInstancePtr, ref audioFrame);
                     break;
-                
+
                 // Metadata
                 case NDIlib.frame_type_e.frame_type_metadata:
                     // UTF-8 strings must be converted for use - length includes the terminating zero
                     // String metadata = Utf8ToString(metadataFrame.p_data, metadataFrame.length - 1);
                     // System.Diagnotics.Debug.Print(metadata);
-                    
+
                     // free frames that were received.
                     NDIlib.recv_free_metadata(_recvInstancePtr, ref metadataFrame);
                     break;
