@@ -66,7 +66,7 @@ public class FindNDI : MonoBehaviour
         else
         {
             Debug.Log("Initialized NDI.");
-            
+
             _mainThreadContext = SynchronizationContext.Current;
 
             FindNDIDevices();
@@ -311,10 +311,6 @@ public class FindNDI : MonoBehaviour
 
                     // We need to be on the UI thread to write to our bitmap
                     // Not very efficient, but this is just an example.
-
-                    byte[] managedArray = new byte[bufferSize];
-                    Marshal.Copy(videoFrame.p_data, managedArray, 0, bufferSize);
-                    
                     _mainThreadContext.Post(d =>
                     {
                         if (_texture == null)
@@ -323,12 +319,10 @@ public class FindNDI : MonoBehaviour
                             _image.texture = _texture;
                         }
 
-                        // _texture.LoadRawTextureData(videoFrame.p_data, bufferSize);
-                        _texture.LoadRawTextureData(managedArray);
+                        _texture.LoadRawTextureData(videoFrame.p_data, bufferSize);
                         _texture.Apply();
+                        NDIlib.recv_free_video_v2(_recvInstancePtr, ref videoFrame);
                     }, null);
-
-                    NDIlib.recv_free_video_v2(_recvInstancePtr, ref videoFrame);
 
                     break;
 
