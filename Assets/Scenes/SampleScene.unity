@@ -309,8 +309,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1347566681}
   - component: {fileID: 1347566682}
+  - component: {fileID: 1347566683}
   m_Layer: 0
-  m_Name: FindNDI
+  m_Name: NDISample
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -342,7 +343,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2acd45c26eafee045aed233145f755d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ReceiveName: UnitySample
+  _ndiReceiver: {fileID: 1347566683}
+--- !u!114 &1347566683
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1347566680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b227039c03ffdb4b8d7ee4e1974b434, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ReceiveName: NDISample
   _videoEnabled: 1
   _audioEnabled: 0
   _image: {fileID: 1505082815}
