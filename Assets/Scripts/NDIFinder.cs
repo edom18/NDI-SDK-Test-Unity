@@ -33,7 +33,7 @@ namespace NDISample
 
             Debug.Log("Initialized NDI.");
 
-            FindNDIDevices();
+            Find();
         }
 
         private void OnDestroy()
@@ -41,7 +41,7 @@ namespace NDISample
             _stopFinder = true;
         }
 
-        private void FindNDIDevices()
+        private void Find()
         {
             IntPtr groupsPtr = IntPtr.Zero;
             IntPtr extraIpsPtr = IntPtr.Zero;
