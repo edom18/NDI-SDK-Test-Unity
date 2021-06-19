@@ -186,7 +186,7 @@ namespace NDISample
                             break;
                         }
 
-                        // We need to be on the UI thread to write to our bitmap
+                        // We need to be on the UI thread to write to our texture.
                         // Not very efficient, but this is just an example.
                         _mainThreadContext.Post(d =>
                         {
