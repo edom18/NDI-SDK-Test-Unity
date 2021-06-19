@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.Profiling;
 using UnityEngine.UI;
 
 namespace NDISample
@@ -161,7 +162,7 @@ namespace NDISample
                 NDIlib.audio_frame_v2_t audioFrame = new NDIlib.audio_frame_v2_t();
                 NDIlib.metadata_frame_t metadataFrame = new NDIlib.metadata_frame_t();
 
-                switch (NDIlib.recv_capture_v2(_recvInstancePtr, ref videoFrame, ref audioFrame, ref metadataFrame, 1000))
+                switch (NDIlib.recv_capture_v2(_recvInstancePtr, ref videoFrame, ref audioFrame, ref metadataFrame, 500))
                 {
                     // No data.
                     case NDIlib.frame_type_e.frame_type_none:
@@ -185,17 +186,17 @@ namespace NDISample
                             break;
                         }
 
-                        // get all our info so that we can free the frame
-                        int yres = videoFrame.yres;
-                        int xres = videoFrame.xres;
-
-                        int stride = videoFrame.line_stride_in_bytes;
-                        int bufferSize = yres * stride;
-
                         // We need to be on the UI thread to write to our bitmap
                         // Not very efficient, but this is just an example.
                         _mainThreadContext.Post(d =>
                         {
+                            // get all our info so that we can free the frame
+                            int yres = videoFrame.yres;
+                            int xres = videoFrame.xres;
+
+                            int stride = videoFrame.line_stride_in_bytes;
+                            int bufferSize = yres * stride;
+
                             if (_texture == null)
                             {
                                 _texture = new Texture2D(xres, yres, TextureFormat.BGRA32, false);
