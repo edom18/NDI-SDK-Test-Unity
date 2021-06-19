@@ -45,7 +45,6 @@ namespace NDISample
         {
             if (!NDIlib.Initialize())
             {
-                Debug.Log("Failed!!!!!!!!!!!!!!!!!");
                 Debug.Log("Cannot run NDI.");
             }
             else
@@ -190,10 +189,7 @@ namespace NDISample
                         int yres = videoFrame.yres;
                         int xres = videoFrame.xres;
 
-                        // quick and dirty aspect ratio correction for non-square pixels - SD 4:3, 16:9, etc.
-                        double dpiX = 96.0 * (videoFrame.picture_aspect_ratio / ((double)xres / (double)yres));
-
-                        int stride = (int)videoFrame.line_stride_in_bytes;
+                        int stride = videoFrame.line_stride_in_bytes;
                         int bufferSize = yres * stride;
 
                         // We need to be on the UI thread to write to our bitmap
@@ -208,6 +204,7 @@ namespace NDISample
 
                             _texture.LoadRawTextureData(videoFrame.p_data, bufferSize);
                             _texture.Apply();
+
                             NDIlib.recv_free_video_v2(_recvInstancePtr, ref videoFrame);
                         }, null);
 
