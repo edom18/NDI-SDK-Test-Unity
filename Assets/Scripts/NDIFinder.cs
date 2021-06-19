@@ -116,7 +116,7 @@ namespace NDISample
                         NDIlib.Source source = new NDIlib.Source(src);
                         _sourceList.Add(source);
 
-                        // Connect(source);
+                        _ndiReceiver.Connect(source);
                     }
                 }
             }

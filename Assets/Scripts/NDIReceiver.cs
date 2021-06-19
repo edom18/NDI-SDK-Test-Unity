@@ -41,10 +41,6 @@ namespace NDISample
 
         private Texture2D _texture = null;
 
-        // private WaveFormat _waveFormat = null;
-
-        private List<NDIlib.Source> _sourceList = new List<NDIlib.Source>();
-
         private void Awake()
         {
             if (!NDIlib.Initialize())
@@ -65,7 +61,7 @@ namespace NDISample
             Disconnect();
         }
 
-        private void Connect(NDIlib.Source source)
+        public void Connect(NDIlib.Source source)
         {
             Disconnect();
 
@@ -115,7 +111,7 @@ namespace NDISample
             _receiveThread.Start();
         }
 
-        private void Disconnect()
+        public void Disconnect()
         {
             SetTallyIndicators(false, false);
 
