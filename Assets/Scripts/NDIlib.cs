@@ -163,6 +163,15 @@ public static class NDIlib
         [MarshalAs(UnmanagedType.U1)] public bool on_preview;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Settings
+    {
+        public IntPtr NdiName;
+        public IntPtr Groups;
+        [MarshalAs(UnmanagedType.U1)] public bool ClockVideo;
+        [MarshalAs(UnmanagedType.U1)] public bool ClockAudio;
+    }
+
     public class Source
     {
         private String _name = String.Empty;
@@ -270,6 +279,19 @@ public static class NDIlib
 
     [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_recv_destroy", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
     public static extern void recv_destroy(IntPtr p_instance);
+    
+    [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_send_create", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr send_create(in Settings settings);
+    
+    [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_send_destroy", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void send_destroy(IntPtr send);
+    
+    [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_send_send_video_async_v2", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void send_send_video_async_v2(IntPtr send, in video_frame_v2_t frame);
+    
+    [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_send_get_tally", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.U1)]
+    public static extern bool send_get_tally(IntPtr send);
 
     public static string Utf8ToString(IntPtr nativeUtf8, uint? length = null)
     {
