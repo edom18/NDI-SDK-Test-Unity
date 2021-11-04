@@ -1,3 +1,4 @@
+using NDISample;
 using UnityEngine;
 
 namespace Klak.Ndi
@@ -20,14 +21,12 @@ namespace Klak.Ndi
             _encoderOutput = null;
         }
 
-        private static int FrameDataCount(int width, int height, bool alpha)
-            => width * height * (alpha ? 3 : 2) / 4;
 
         public ComputeBuffer Encode(Texture source, bool enableAlpha, bool vflip)
         {
             int width = source.width;
             int height = source.height;
-            int dataCount = FrameDataCount(width, height, enableAlpha);
+            int dataCount = Utils.FrameDataCount(width, height, enableAlpha);
 
             // Reallocate the output buffer when the output size was changed.
             if (_encoderOutput != null && _encoderOutput.count != dataCount)
