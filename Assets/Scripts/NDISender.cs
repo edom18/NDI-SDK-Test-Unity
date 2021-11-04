@@ -22,6 +22,12 @@ namespace NDISample
 
         private void Start()
         {
+            if (!NDIlib.Initialize())
+            {
+                Debug.Log("NDIlib can't be initialized.");
+                return;
+            }
+            
             _formatConverter = new FormatConverter(_encodeCompute);
 
             IntPtr nname = Marshal.StringToHGlobalAnsi(_ndiName);
@@ -29,16 +35,26 @@ namespace NDISample
             _sendInstance = NDIlib.send_create(sendSettings);
             Marshal.FreeHGlobal(nname);
 
-            if (!NDIlib.Initialize())
-            {
-                Debug.Log("NDIlib can't be initialized.");
-                return;
-            }
-
             if (_sendInstance == IntPtr.Zero)
             {
                 Debug.LogError("NDI can't create a send instance.");
                 return;
+            }
+
+            StartCoroutine(CaptureCoroutine());
+        }
+
+        private void OnDestroy()
+        {
+            ReleaseInternalObjects();
+        }
+
+        private void ReleaseInternalObjects()
+        {
+            if (_sendInstance != IntPtr.Zero)
+            {
+                NDIlib.send_destroy(_sendInstance);
+                _sendInstance = IntPtr.Zero;
             }
         }
 
@@ -59,7 +75,7 @@ namespace NDISample
         {
             _width = Screen.width;
             _height = Screen.height;
-            
+
             RenderTexture tempRT = RenderTexture.GetTemporary(_width, _height, 0);
 
             ScreenCapture.CaptureScreenshotIntoRenderTexture(tempRT);
@@ -77,7 +93,7 @@ namespace NDISample
             if (request.hasError) return;
 
             // Ignore it if the NDI object has been already disposed.
-            if (_sendInstance == null || _sendInstance == IntPtr.Zero) return;
+            if (_sendInstance == IntPtr.Zero) return;
 
             // Readback data retrieval
             NativeArray<byte> data = request.GetData<byte>();
