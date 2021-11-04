@@ -164,7 +164,7 @@ public static class NDIlib
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct Settings
+    public struct SendSettings
     {
         public IntPtr NdiName;
         public IntPtr Groups;
@@ -281,7 +281,7 @@ public static class NDIlib
     public static extern void recv_destroy(IntPtr p_instance);
     
     [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_send_create", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
-    public static extern IntPtr send_create(in Settings settings);
+    public static extern IntPtr send_create(in SendSettings sendSettings);
     
     [DllImport("Processing.NDI.Lib.x64.dll", EntryPoint = "NDIlib_send_destroy", ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
     public static extern void send_destroy(IntPtr send);
