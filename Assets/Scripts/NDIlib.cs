@@ -1,12 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
-using System.Collections;
-using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
-using TMPro.EditorUtilities;
-using UnityEngine;
-using UnityEngine.Experimental.TerrainAPI;
 
 namespace NDISample
 {

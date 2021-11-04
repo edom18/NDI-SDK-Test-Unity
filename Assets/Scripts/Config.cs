@@ -7,8 +7,7 @@ namespace NDISample
 #elif UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
         public const string DllName = "libndi.4";
 #elif UNITY_ANDROID
-        // TODO: あとでチェック
-        public const string DllName = "Processing.NDI.Lib.so";
+        public const string DllName = "ndi";
 #else
         public const string DllName = "__Internal";
 #endif
