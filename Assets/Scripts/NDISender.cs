@@ -25,6 +25,8 @@ namespace NDISample
 
         private void Start()
         {
+            WifiManager.Instance.SetupNetwork();
+            
             if (!NDIlib.Initialize())
             {
                 Debug.Log("NDIlib can't be initialized.");
