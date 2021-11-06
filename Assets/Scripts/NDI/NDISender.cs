@@ -11,6 +11,7 @@ namespace NDIPlugin
     {
         [SerializeField] private string _ndiName;
         [SerializeField] private ComputeShader _encodeCompute;
+        [SerializeField] private ComputeShader _computeShader;
         [SerializeField] private bool _enableAlpha = false;
 
         private IntPtr _sendInstance;
@@ -65,6 +66,8 @@ namespace NDIPlugin
                 _nativeArray.Value.Dispose();
                 _nativeArray = null;
             }
+            
+            _encoderOutput?.Release();
         }
 
         private IEnumerator CaptureCoroutine()
@@ -96,17 +99,48 @@ namespace NDIPlugin
 #else
             bool vflip = false;
 #endif
-            ComputeBuffer converted = _formatConverter.Encode(tempRT, _enableAlpha, vflip);
+            // ComputeBuffer converted = _formatConverter.Encode(tempRT, _enableAlpha, vflip);
+            ComputeBuffer converted = Encode(tempRT, _enableAlpha, vflip);
             RenderTexture.ReleaseTemporary(tempRT);
 
             return converted;
+        }
+
+        private ComputeBuffer _encoderOutput;
+
+        private ComputeBuffer Encode(Texture source, bool enableAlpha, bool vflip)
+        {
+            int width = source.width;
+            int height = source.height;
+            int dataCount = _width * _height;
+
+            // Reallocate the output buffer when the output size was changed.
+            if (_encoderOutput != null && _encoderOutput.count != dataCount)
+            {
+                _encoderOutput?.Dispose();
+            }
+
+            // Output buffer allocation
+            if (_encoderOutput == null)
+            {
+                _encoderOutput = new ComputeBuffer(dataCount, 4);
+            }
+
+            // Compute thread dispatching
+            // int pass = enableAlpha ? 1 : 0;
+            // _computeShader.SetInt("VFlip", vflip ? -1 : 1);
+            _computeShader.SetTexture(0, "Source", source);
+            _computeShader.SetBuffer(0, "Destination", _encoderOutput);
+            _computeShader.Dispatch(0, width / 8, height / 8, 1);
+
+            return _encoderOutput;
         }
 
         private unsafe void Send(ComputeBuffer buffer)
         {
             if (_nativeArray == null)
             {
-                int length = Utils.FrameDataCount(_width, _height, _enableAlpha) * 4;
+                int length = _width * _height * 4;
                 _nativeArray = new NativeArray<byte>(length, Allocator.Persistent);
 
                 _bytes = new byte[length];
@@ -118,18 +152,18 @@ namespace NDIPlugin
             void* pdata = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_nativeArray.Value);
 
             // Data size verification
-            if (_nativeArray.Value.Length / sizeof(uint) != Utils.FrameDataCount(_width, _height, _enableAlpha))
-            {
-                return;
-            }
+            // if (_nativeArray.Value.Length / sizeof(uint) != Utils.FrameDataCount(_width, _height, _enableAlpha))
+            // {
+            //     return;
+            // }
 
             // Frame data setup
             var frame = new NDIlib.video_frame_v2_t
             {
                 xres = _width,
                 yres = _height,
-                line_stride_in_bytes = _width * 2,
-                FourCC = NDIlib.FourCC_type_e.FourCC_type_UYVY,
+                line_stride_in_bytes = _width * 4,
+                FourCC = NDIlib.FourCC_type_e.FourCC_type_RGBA,
                 frame_format_type = NDIlib.frame_format_type_e.frame_format_type_progressive,
                 p_data = (IntPtr)pdata,
                 p_metadata = IntPtr.Zero,
@@ -138,6 +172,43 @@ namespace NDIPlugin
             // Send via NDI
             NDIlib.send_send_video_async_v2(_sendInstance, frame);
         }
+
+        // private unsafe void Send(ComputeBuffer buffer)
+        // {
+        //     if (_nativeArray == null)
+        //     {
+        //         int length = Utils.FrameDataCount(_width, _height, _enableAlpha) * 4;
+        //         _nativeArray = new NativeArray<byte>(length, Allocator.Persistent);
+        //
+        //         _bytes = new byte[length];
+        //     }
+        //
+        //     buffer.GetData(_bytes);
+        //     _nativeArray.Value.CopyFrom(_bytes);
+        //
+        //     void* pdata = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_nativeArray.Value);
+        //
+        //     // Data size verification
+        //     if (_nativeArray.Value.Length / sizeof(uint) != Utils.FrameDataCount(_width, _height, _enableAlpha))
+        //     {
+        //         return;
+        //     }
+        //
+        //     // Frame data setup
+        //     var frame = new NDIlib.video_frame_v2_t
+        //     {
+        //         xres = _width,
+        //         yres = _height,
+        //         line_stride_in_bytes = _width * 2,
+        //         FourCC = NDIlib.FourCC_type_e.FourCC_type_UYVY,
+        //         frame_format_type = NDIlib.frame_format_type_e.frame_format_type_progressive,
+        //         p_data = (IntPtr)pdata,
+        //         p_metadata = IntPtr.Zero,
+        //     };
+        //
+        //     // Send via NDI
+        //     NDIlib.send_send_video_async_v2(_sendInstance, frame);
+        // }
 
         // private unsafe void OnReadback(AsyncGPUReadbackRequest request)
         // {

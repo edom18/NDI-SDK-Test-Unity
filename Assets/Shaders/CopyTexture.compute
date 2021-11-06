@@ -1,0 +1,21 @@
+#pragma kernel CopyTexture
+
+Texture2D<float4> Source;
+RWStructuredBuffer<uint> Destination;
+int VFlip;
+
+[numthreads(8, 8, 1)]
+void CopyTexture(uint2 id : SV_DispatchThreadID)
+{
+    float4 c = Source[id];
+    uint4 uic = uint4(c * 255);
+
+    uint w, h;
+    Source.GetDimensions(w, h);
+    
+    int index = id.y * w + id.x;
+    Destination[index + 0] = uic[0];
+    Destination[index + 1] = uic[1];
+    Destination[index + 2] = uic[2];
+    Destination[index + 3] = uic[3];
+}

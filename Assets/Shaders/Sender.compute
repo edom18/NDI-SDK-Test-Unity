@@ -1,5 +1,6 @@
 #pragma kernel EncodeUYVY
 #pragma kernel EncodeUYVA
+#pragma kernel CopyTexture
 
 Texture2D<float4> Source;
 RWStructuredBuffer<uint> Destination;
@@ -63,7 +64,7 @@ void EncodeUYVY(uint2 id : SV_DispatchThreadID)
     uint w, h;
     Source.GetDimensions(w, h);
 
-    uint sy = VFlip < 0 ? h - 1 - id.y : id.y;
+    uint sy = VFlip < 0 ? (h - 1 - id.y) : id.y;
     Destination[sy * w / 2 + id.x] = PackUYVY(uyvy);
 }
 
