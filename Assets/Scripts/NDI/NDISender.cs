@@ -91,7 +91,12 @@ namespace NDIPlugin
 
             ScreenCapture.CaptureScreenshotIntoRenderTexture(tempRT);
 
-            ComputeBuffer converted = _formatConverter.Encode(tempRT, _enableAlpha, false);
+#if !UNITY_EDITOR && UNITY_ANDROID
+            bool vflip = true;
+#else
+            bool vflip = false;
+#endif
+            ComputeBuffer converted = _formatConverter.Encode(tempRT, _enableAlpha, vflip);
             RenderTexture.ReleaseTemporary(tempRT);
 
             return converted;
