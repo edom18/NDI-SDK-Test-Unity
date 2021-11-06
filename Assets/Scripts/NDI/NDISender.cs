@@ -11,12 +11,12 @@ namespace NDIPlugin
     {
         [SerializeField] private string _ndiName;
         [SerializeField] private ComputeShader _encodeCompute;
+        [SerializeField] private bool _enableAlpha = false;
 
         private IntPtr _sendInstance;
         private FormatConverter _formatConverter;
         private int _width;
         private int _height;
-        private bool _enableAlpha = false;
 
         private NativeArray<byte>? _nativeArray;
         private byte[] _bytes;
