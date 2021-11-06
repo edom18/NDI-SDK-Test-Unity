@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace NDIPlugin
 {
     public class WifiManager
