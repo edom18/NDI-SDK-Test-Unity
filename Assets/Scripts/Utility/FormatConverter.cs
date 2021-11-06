@@ -1,7 +1,6 @@
-using NDIPlugin;
 using UnityEngine;
 
-namespace Klak.Ndi
+namespace NDIPlugin
 {
     sealed class FormatConverter : System.IDisposable
     {
@@ -20,7 +19,6 @@ namespace Klak.Ndi
             _encoderOutput?.Dispose();
             _encoderOutput = null;
         }
-
 
         public ComputeBuffer Encode(Texture source, bool enableAlpha, bool vflip)
         {

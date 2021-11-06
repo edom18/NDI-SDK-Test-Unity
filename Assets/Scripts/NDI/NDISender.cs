@@ -1,11 +1,9 @@
 using System;
 using System.Collections;
 using System.Runtime.InteropServices;
-using Klak.Ndi;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace NDIPlugin
 {
@@ -26,7 +24,7 @@ namespace NDIPlugin
         private void Start()
         {
             WifiManager.Instance.SetupNetwork();
-            
+
             if (!NDIlib.Initialize())
             {
                 Debug.Log("NDIlib can't be initialized.");
@@ -105,13 +103,13 @@ namespace NDIPlugin
             {
                 int length = Utils.FrameDataCount(_width, _height, _enableAlpha) * 4;
                 _nativeArray = new NativeArray<byte>(length, Allocator.Persistent);
-                
+
                 _bytes = new byte[length];
             }
 
             buffer.GetData(_bytes);
             _nativeArray.Value.CopyFrom(_bytes);
-            
+
             void* pdata = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_nativeArray.Value);
 
             // Data size verification
