@@ -129,7 +129,7 @@ namespace NDIPlugin
                 xres = _width,
                 yres = _height,
                 line_stride_in_bytes = _width * 2,
-                FourCC = NDIlib.FourCC_type_e.FourCC_type_UYVY,
+                FourCC = _enableAlpha ? NDIlib.FourCC_type_e.FourCC_type_UYVA : NDIlib.FourCC_type_e.FourCC_type_UYVY,
                 frame_format_type = NDIlib.frame_format_type_e.frame_format_type_progressive,
                 p_data = (IntPtr)pdata,
                 p_metadata = IntPtr.Zero,
