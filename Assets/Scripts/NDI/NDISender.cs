@@ -99,7 +99,7 @@ namespace NDIPlugin
             return converted;
         }
 
-        unsafe private void Send(ComputeBuffer buffer)
+        private unsafe void Send(ComputeBuffer buffer)
         {
             if (_nativeArray == null)
             {
@@ -123,45 +123,48 @@ namespace NDIPlugin
             // Frame data setup
             var frame = new NDIlib.video_frame_v2_t
             {
-                xres = _width, yres = _height, line_stride_in_bytes = _width * 2,
+                xres = _width,
+                yres = _height,
+                line_stride_in_bytes = _width * 2,
                 FourCC = NDIlib.FourCC_type_e.FourCC_type_UYVY,
                 frame_format_type = NDIlib.frame_format_type_e.frame_format_type_progressive,
-                p_data = (IntPtr)pdata, p_metadata = IntPtr.Zero,
+                p_data = (IntPtr)pdata,
+                p_metadata = IntPtr.Zero,
             };
 
             // Send via NDI
             NDIlib.send_send_video_async_v2(_sendInstance, frame);
         }
 
-        unsafe void OnReadback(AsyncGPUReadbackRequest request)
-        {
-            // Ignore errors.
-            if (request.hasError) return;
-
-            // Ignore it if the NDI object has been already disposed.
-            if (_sendInstance == IntPtr.Zero) return;
-
-            // Readback data retrieval
-            NativeArray<byte> data = request.GetData<byte>();
-            void* pdata = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(data);
-
-            // Data size verification
-            if (data.Length / sizeof(uint) != Utils.FrameDataCount(_width, _height, _enableAlpha))
-            {
-                return;
-            }
-
-            // Frame data setup
-            var frame = new NDIlib.video_frame_v2_t
-            {
-                xres = _width, yres = _height, line_stride_in_bytes = _width * 2,
-                FourCC = NDIlib.FourCC_type_e.FourCC_type_UYVY,
-                frame_format_type = NDIlib.frame_format_type_e.frame_format_type_progressive,
-                p_data = (IntPtr)pdata, p_metadata = IntPtr.Zero,
-            };
-
-            // Send via NDI
-            NDIlib.send_send_video_async_v2(_sendInstance, frame);
-        }
+        // private unsafe void OnReadback(AsyncGPUReadbackRequest request)
+        // {
+        //     // Ignore errors.
+        //     if (request.hasError) return;
+        //
+        //     // Ignore it if the NDI object has been already disposed.
+        //     if (_sendInstance == IntPtr.Zero) return;
+        //
+        //     // Readback data retrieval
+        //     NativeArray<byte> data = request.GetData<byte>();
+        //     void* pdata = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(data);
+        //
+        //     // Data size verification
+        //     if (data.Length / sizeof(uint) != Utils.FrameDataCount(_width, _height, _enableAlpha))
+        //     {
+        //         return;
+        //     }
+        //
+        //     // Frame data setup
+        //     var frame = new NDIlib.video_frame_v2_t
+        //     {
+        //         xres = _width, yres = _height, line_stride_in_bytes = _width * 2,
+        //         FourCC = NDIlib.FourCC_type_e.FourCC_type_UYVY,
+        //         frame_format_type = NDIlib.frame_format_type_e.frame_format_type_progressive,
+        //         p_data = (IntPtr)pdata, p_metadata = IntPtr.Zero,
+        //     };
+        //
+        //     // Send via NDI
+        //     NDIlib.send_send_video_async_v2(_sendInstance, frame);
+        // }
     }
 }
