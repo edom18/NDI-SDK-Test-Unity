@@ -7,7 +7,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace NDISample
+namespace NDIPlugin
 {
     public class NDISender : MonoBehaviour
     {

@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.UI;
 
-namespace NDISample
+namespace NDIPlugin
 {
     public class NDIReceiver : MonoBehaviour
     {

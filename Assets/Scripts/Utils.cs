@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace NDISample
+namespace NDIPlugin
 {
     public static class Utils
     {

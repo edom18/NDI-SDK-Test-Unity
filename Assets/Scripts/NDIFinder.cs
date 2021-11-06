@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace NDISample
+namespace NDIPlugin
 {
     public class NDIFinder : MonoBehaviour
     {

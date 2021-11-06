@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace NDISample
+namespace NDIPlugin
 {
     public static class NDIlib
     {

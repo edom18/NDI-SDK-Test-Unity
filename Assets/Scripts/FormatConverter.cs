@@ -1,4 +1,4 @@
-using NDISample;
+using NDIPlugin;
 using UnityEngine;
 
 namespace Klak.Ndi

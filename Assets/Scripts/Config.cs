@@ -1,4 +1,4 @@
-namespace NDISample
+namespace NDIPlugin
 {
     public static class Config
     {
