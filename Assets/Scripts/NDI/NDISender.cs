@@ -15,6 +15,8 @@ namespace NDIPlugin
         [SerializeField] private ComputeShader _encodeCompute;
         [SerializeField] private bool _enableAlpha = false;
         [SerializeField] private GameObject _frameTextureSourceContainer;
+        [SerializeField] private int _frameRateNumerator = 30000;
+        [SerializeField] private int _frameRateDenominator = 1001;
 
         [SerializeField] private RawImage _preview;
 
@@ -136,8 +138,8 @@ namespace NDIPlugin
                 xres = _width,
                 yres = _height,
                 line_stride_in_bytes = _width * 2,
-                frame_rate_N = 30000,
-                frame_rate_D = 1001,
+                frame_rate_N = _frameRateNumerator,
+                frame_rate_D = _frameRateDenominator,
                 FourCC = _enableAlpha ? NDIlib.FourCC_type_e.FourCC_type_UYVA : NDIlib.FourCC_type_e.FourCC_type_UYVY,
                 frame_format_type = NDIlib.frame_format_type_e.frame_format_type_progressive,
                 p_data = (IntPtr)pdata,
