@@ -15,16 +15,20 @@ namespace NDIPlugin
         [SerializeField] private ComputeShader _encodeCompute;
         [SerializeField] private bool _enableAlpha = false;
         [SerializeField] private Camera _targetCamera;
+        [SerializeField] private Shader _shdaer;
 
         [SerializeField] private RawImage _preview;
+        [SerializeField] private Texture2D _dummyTexture;
 
         private IntPtr _sendInstance;
         private FormatConverter _formatConverter;
         private int _width;
         private int _height;
 
+        private Material _material;
         private NRRGBCamTexture _rgbCamTexture;
         private RenderTexture _renderTexture;
+        private RenderTexture _cameraTargetRenderTexture;
         private NativeArray<byte>? _nativeArray;
         private byte[] _bytes;
 
@@ -37,6 +41,8 @@ namespace NDIPlugin
                 Debug.Log("NDIlib can't be initialized.");
                 return;
             }
+
+            _material = new Material(_shdaer);
 
             _rgbCamTexture = new NRRGBCamTexture();
             _rgbCamTexture.Play();
@@ -81,6 +87,18 @@ namespace NDIPlugin
                 _renderTexture.Release();
                 _renderTexture = null;
             }
+
+            if (_cameraTargetRenderTexture != null)
+            {
+                _cameraTargetRenderTexture.Release();
+                _cameraTargetRenderTexture = null;
+            }
+
+            if (_material != null)
+            {
+                Destroy(_material);
+                _material = null;
+            }
         }
 
         private IEnumerator CaptureCoroutine()
@@ -91,8 +109,6 @@ namespace NDIPlugin
 
                 ComputeBuffer converted = Capture();
                 if (converted == null) continue;
-
-                // AsyncGPUReadback.Request(converted, OnReadback);
 
                 Send(converted);
             }
@@ -113,26 +129,25 @@ namespace NDIPlugin
             {
                 Debug.Log($">>>>>>>> NRRGBCamera texture size : {texture.width} - {texture.height}");
                 
-                int width = texture.width / 2;
-                int height = texture.height / 2;
+                int width = texture.width / 4;
+                int height = texture.height / 4;
                 _renderTexture = new RenderTexture(width, height, 0);
                 _renderTexture.Create();
-                // _targetCamera.targetTexture = _renderTexture;
                 _preview.texture = _renderTexture;
+
+                _cameraTargetRenderTexture = new RenderTexture(width, height, 0);
+                _cameraTargetRenderTexture.Create();
+                _targetCamera.enabled = false;
+                _targetCamera.targetTexture = _cameraTargetRenderTexture;
             }
-            // _width = Screen.width;
-            // _height = Screen.height;
-
-            // RenderTexture tempRT = RenderTexture.GetTemporary(_width, _height, 0);
-            //
-            // ScreenCapture.CaptureScreenshotIntoRenderTexture(tempRT);
-
-            // ComputeBuffer converted = _formatConverter.Encode(tempRT, _enableAlpha, vflip);
-            // RenderTexture.ReleaseTemporary(tempRT);
-
+            
             _width = _renderTexture.width;
             _height = _renderTexture.height;
-            Graphics.Blit(texture, _renderTexture);
+            
+            _targetCamera.Render();
+            _material.SetTexture("_BcakGroundTex", _dummyTexture);
+            _material.SetTexture("_MainTex", _cameraTargetRenderTexture);
+            Graphics.Blit(null, _renderTexture, _material);
             ComputeBuffer converted = _formatConverter.Encode(_renderTexture, _enableAlpha, vflip);
 
             return converted;
@@ -174,36 +189,5 @@ namespace NDIPlugin
             // Send via NDI
             NDIlib.send_send_video_async_v2(_sendInstance, frame);
         }
-
-        // private unsafe void OnReadback(AsyncGPUReadbackRequest request)
-        // {
-        //     // Ignore errors.
-        //     if (request.hasError) return;
-        //
-        //     // Ignore it if the NDI object has been already disposed.
-        //     if (_sendInstance == IntPtr.Zero) return;
-        //
-        //     // Readback data retrieval
-        //     NativeArray<byte> data = request.GetData<byte>();
-        //     void* pdata = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(data);
-        //
-        //     // Data size verification
-        //     if (data.Length / sizeof(uint) != Utils.FrameDataCount(_width, _height, _enableAlpha))
-        //     {
-        //         return;
-        //     }
-        //
-        //     // Frame data setup
-        //     var frame = new NDIlib.video_frame_v2_t
-        //     {
-        //         xres = _width, yres = _height, line_stride_in_bytes = _width * 2,
-        //         FourCC = NDIlib.FourCC_type_e.FourCC_type_UYVY,
-        //         frame_format_type = NDIlib.frame_format_type_e.frame_format_type_progressive,
-        //         p_data = (IntPtr)pdata, p_metadata = IntPtr.Zero,
-        //     };
-        //
-        //     // Send via NDI
-        //     NDIlib.send_send_video_async_v2(_sendInstance, frame);
-        // }
     }
 }
