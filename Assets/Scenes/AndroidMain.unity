@@ -451,6 +451,8 @@ MonoBehaviour:
   _encodeCompute: {fileID: 7200000, guid: 90801df4c0adee9418a58733f36602d8, type: 3}
   _enableAlpha: 0
   _frameTextureSourceContainer: {fileID: 618491685}
+  _frameRateNumerator: 30000
+  _frameRateDenominator: 1001
   _preview: {fileID: 461255197}
 --- !u!4 &1149514522
 Transform:
@@ -938,6 +940,14 @@ PrefabInstance:
     - target: {fileID: 2823198785793975086, guid: c1b239fc04c0fb8449255d320ad32c3e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2823198785793975087, guid: c1b239fc04c0fb8449255d320ad32c3e, type: 3}
+      propertyPath: _width
+      value: 1024
+      objectReference: {fileID: 0}
+    - target: {fileID: 2823198785793975087, guid: c1b239fc04c0fb8449255d320ad32c3e, type: 3}
+      propertyPath: _height
+      value: 1024
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c1b239fc04c0fb8449255d320ad32c3e, type: 3}

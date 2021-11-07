@@ -6,6 +6,7 @@ namespace NDIPlugin
     {
         private void Update()
         {
+            Debug.Log("RRRRRRRRRRRRRRRRRRR");
             transform.Rotate(Vector3.up, Space.World);
         }
     }
