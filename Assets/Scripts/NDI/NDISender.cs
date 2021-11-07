@@ -83,12 +83,9 @@ namespace NDIPlugin
             {
                 yield return eof;
 
-                // Debug.Log(">>>>>>>>>>>>>>>");
-
                 ComputeBuffer converted = Capture();
                 if (converted == null)
                 {
-                    Debug.Log("??????????????????");
                     continue;
                 }
 
