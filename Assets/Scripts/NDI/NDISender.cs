@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Runtime.InteropServices;
+using NRKernal;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace NDIPlugin
 {
@@ -12,12 +14,17 @@ namespace NDIPlugin
         [SerializeField] private string _ndiName;
         [SerializeField] private ComputeShader _encodeCompute;
         [SerializeField] private bool _enableAlpha = false;
+        [SerializeField] private Camera _targetCamera;
+
+        [SerializeField] private RawImage _preview;
 
         private IntPtr _sendInstance;
         private FormatConverter _formatConverter;
         private int _width;
         private int _height;
 
+        private NRRGBCamTexture _rgbCamTexture;
+        private RenderTexture _renderTexture;
         private NativeArray<byte>? _nativeArray;
         private byte[] _bytes;
 
@@ -30,6 +37,9 @@ namespace NDIPlugin
                 Debug.Log("NDIlib can't be initialized.");
                 return;
             }
+
+            _rgbCamTexture = new NRRGBCamTexture();
+            _rgbCamTexture.Play();
 
             _formatConverter = new FormatConverter(_encodeCompute);
 
@@ -65,6 +75,12 @@ namespace NDIPlugin
                 _nativeArray.Value.Dispose();
                 _nativeArray = null;
             }
+
+            if (_renderTexture != null)
+            {
+                _renderTexture.Release();
+                _renderTexture = null;
+            }
         }
 
         private IEnumerator CaptureCoroutine()
@@ -84,20 +100,40 @@ namespace NDIPlugin
 
         private ComputeBuffer Capture()
         {
-            _width = Screen.width;
-            _height = Screen.height;
-
-            RenderTexture tempRT = RenderTexture.GetTemporary(_width, _height, 0);
-
-            ScreenCapture.CaptureScreenshotIntoRenderTexture(tempRT);
-
 #if !UNITY_EDITOR && UNITY_ANDROID
             bool vflip = true;
 #else
             bool vflip = false;
 #endif
-            ComputeBuffer converted = _formatConverter.Encode(tempRT, _enableAlpha, vflip);
-            RenderTexture.ReleaseTemporary(tempRT);
+            if (!_rgbCamTexture.IsPlaying) return null;
+
+            Texture2D texture = _rgbCamTexture.GetTexture();
+
+            if (_renderTexture == null)
+            {
+                Debug.Log($">>>>>>>> NRRGBCamera texture size : {texture.width} - {texture.height}");
+                
+                int width = texture.width / 2;
+                int height = texture.height / 2;
+                _renderTexture = new RenderTexture(width, height, 0);
+                _renderTexture.Create();
+                // _targetCamera.targetTexture = _renderTexture;
+                _preview.texture = _renderTexture;
+            }
+            // _width = Screen.width;
+            // _height = Screen.height;
+
+            // RenderTexture tempRT = RenderTexture.GetTemporary(_width, _height, 0);
+            //
+            // ScreenCapture.CaptureScreenshotIntoRenderTexture(tempRT);
+
+            // ComputeBuffer converted = _formatConverter.Encode(tempRT, _enableAlpha, vflip);
+            // RenderTexture.ReleaseTemporary(tempRT);
+
+            _width = _renderTexture.width;
+            _height = _renderTexture.height;
+            Graphics.Blit(texture, _renderTexture);
+            ComputeBuffer converted = _formatConverter.Encode(_renderTexture, _enableAlpha, vflip);
 
             return converted;
         }
